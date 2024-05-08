@@ -199,7 +199,7 @@ func main() {
 		addFirefox(firefoxVersion)
 	}
 
-	if err := addLatestGithubRelease(ctx, "SeleniumHQ", "htmlunit-driver", "htmlunit-driver-.*-jar-with-dependencies.jar", "htmlunit-driver.jar"); err != nil {
+	if err := addLatestGithubRelease(ctx, "SeleniumHQ", "htmlunit-driver", "htmlunit3-driver-.*-jar-with-dependencies.jar", "htmlunit-driver.jar"); err != nil {
 		glog.Errorf("Unable to find the latest HTMLUnit Driver: %s", err)
 	}
 
