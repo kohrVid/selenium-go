@@ -104,6 +104,38 @@ func addLatestGithubRelease(ctx context.Context, owner, repo, assetName, localFi
 	return fmt.Errorf("Release for %s not found at http://github.com/%s/%s/releases", assetName, owner, repo)
 }
 
+// addGithubReleaseByTag adds a file to the list of files to download from the
+// release of the specified Github repository that matches the asset name and
+// tag name. The file will be downloaded to localFileName.
+func addGithubReleaseByTag(ctx context.Context, owner, repo, assetName, tagName string, localFileName string) error {
+	client := github.NewClient(nil)
+
+	rel, _, err := client.Repositories.GetReleaseByTag(ctx, owner, repo, tagName)
+	if err != nil {
+		return err
+	}
+	assetNameRE, err := regexp.Compile(assetName)
+	if err != nil {
+		return fmt.Errorf("invalid asset name regular expression %q: %s", assetName, err)
+	}
+	for _, a := range rel.Assets {
+		if !assetNameRE.MatchString(a.GetName()) {
+			continue
+		}
+		u := a.GetBrowserDownloadURL()
+		if u == "" {
+			return fmt.Errorf("%s does not have a download URL", a.GetName())
+		}
+		files = append(files, file{
+			name: localFileName,
+			url:  u,
+		})
+		return nil
+	}
+
+	return fmt.Errorf("Release for %s not found at http://github.com/%s/%s/releases", assetName, owner, repo)
+}
+
 // addChrome adds the appropriate chromium files to the list.
 //
 // If `latestChromeBuild` is empty, then the latest build will be used.
@@ -199,7 +231,7 @@ func main() {
 		addFirefox(firefoxVersion)
 	}
 
-	if err := addLatestGithubRelease(ctx, "SeleniumHQ", "htmlunit-driver", "htmlunit3-driver-.*-jar-with-dependencies.jar", "htmlunit-driver.jar"); err != nil {
+	if err := addGithubReleaseByTag(ctx, "SeleniumHQ", "htmlunit-driver", "htmlunit-driver-.*-jar-with-dependencies.jar", "2.70.0", "htmlunit-driver.jar"); err != nil {
 		glog.Errorf("Unable to find the latest HTMLUnit Driver: %s", err)
 	}
 
